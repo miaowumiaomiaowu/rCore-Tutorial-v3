@@ -42,7 +42,7 @@ endif
 
 env:
 	(rustup target list | grep "riscv64gc-unknown-none-elf (installed)") || rustup target add $(TARGET)
-	cargo install cargo-binutils --vers =0.3.3
+	# cargo install cargo-binutils --vers 0.3.3
 	rustup component add rust-src
 	rustup component add llvm-tools-preview
 
@@ -53,6 +53,7 @@ kernel:
 	@cd ../user && make build TEST=$(TEST)
 	@echo Platform: $(BOARD)
 	@cp src/linker-$(BOARD).ld src/linker.ld
+	@python3 build.py
 	@cargo build --release --features "board_$(BOARD)"
 	@rm src/linker.ld
 
@@ -68,8 +69,6 @@ disasm-vim: kernel
 	@rm $(DISASM_TMP)
 
 run: run-inner
-
-	
 
 run-inner: build
 ifeq ($(BOARD),qemu)
@@ -90,7 +89,7 @@ endif
 
 debug: build
 	@tmux new-session -d \
-		"qemu-system-riscv64 -machine virt -nographic -bios $(BOOTLOADER) -device loader,file=$(KERNEL_BIN),addr=$(KERNEL_ENTRY_PA) -s -S" && \
+		"qemu-system-riscv64 -machine virt -nographic -bios $(BOOTLOADER) -device loader,file $(KERNEL_BIN),addr=$(KERNEL_ENTRY_PA) -s -S" && \
 		tmux split-window -h "riscv64-unknown-elf-gdb -ex 'file $(KERNEL_ELF)' -ex 'set arch riscv:rv64' -ex 'target remote localhost:1234'" && \
 		tmux -2 attach-session -d
 

@@ -56,6 +56,62 @@ bitflags! {
     }
 }
 
+// 任务状态枚举
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum TaskStatus {
+    UnInit = 0,
+    Ready = 1,
+    Running = 2,
+    Exited = 3,
+}
+
+// 系统调用信息结构体
+#[repr(C)]
+#[derive(Copy, Clone, Debug)]
+pub struct SyscallInfo {
+    pub id: usize,
+    pub times: usize,
+}
+
+// 最大系统调用数量
+pub const MAX_SYSCALL_NUM: usize = 500;
+
+// 任务信息结构体
+#[repr(C)]
+#[derive(Copy, Clone, Debug)]
+pub struct TaskInfo {
+    pub id: usize,
+    pub status: TaskStatus,
+    pub call: [SyscallInfo; MAX_SYSCALL_NUM],
+    pub time: usize,
+}
+
+impl TaskInfo {
+    pub fn new() -> Self {
+        TaskInfo {
+            id: 0,
+            status: TaskStatus::UnInit,
+            call: [SyscallInfo { id: 0, times: 0 }; MAX_SYSCALL_NUM],
+            time: 0,
+        }
+    }
+}
+
+impl Default for TaskInfo {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+// 获取任务信息的接口函数
+pub fn task_info(id: usize) -> Option<TaskInfo> {
+    let mut info = TaskInfo::new();
+    match syscall::sys_task_info(id, &mut info as *mut TaskInfo) {
+        0 => Some(info),
+        _ => None,
+    }
+}
+
 #[repr(C)]
 #[derive(Debug, Default)]
 pub struct TimeVal {

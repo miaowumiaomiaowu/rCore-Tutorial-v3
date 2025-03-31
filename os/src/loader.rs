@@ -1,5 +1,6 @@
 use crate::trap::TrapContext;
 use crate::config::*;
+use core::arch::asm;
 
 #[repr(align(4096))]
 #[derive(Copy, Clone)]
@@ -46,7 +47,11 @@ fn get_base_i(app_id: usize) -> usize {
 
 pub fn get_num_app() -> usize {
     extern "C" { fn _num_app(); }
-    unsafe { (_num_app as usize as *const usize).read_volatile() }
+    unsafe { 
+        let num_app_ptr = _num_app as usize as *const usize;
+        // 直接从link_app.S加载应用程序数量
+        num_app_ptr.read_volatile()
+    }
 }
 
 pub fn load_apps() {
