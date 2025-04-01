@@ -6,6 +6,7 @@ use core::ptr::addr_of_mut;
 
 #[global_allocator]
 /// heap allocator instance
+/// 初始化堆分配器
 static HEAP_ALLOCATOR: LockedHeap = LockedHeap::empty();
 
 #[alloc_error_handler]
@@ -15,9 +16,16 @@ pub fn handle_alloc_error(layout: core::alloc::Layout) -> ! {
 }
 
 /// heap space ([u8; KERNEL_HEAP_SIZE])
+/// 定义一个大小为KERNEL_HEAP_SIZE的u8数组
+/// 这个数组就是我们手动分配的堆空间
 static mut HEAP_SPACE: [u8; KERNEL_HEAP_SIZE] = [0; KERNEL_HEAP_SIZE];
 
 /// initiate heap allocator
+/// 提供初始化函数
+/// 这一步就是：
+/// - 把我们手动分配的HEAP_SPACE传给buddy_system_allocator
+/// - 并在内核启动时调用
+/// - 这样就可以在内核中使用heap了
 pub fn init_heap() {
     unsafe {
         HEAP_ALLOCATOR

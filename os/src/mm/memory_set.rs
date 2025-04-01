@@ -33,6 +33,8 @@ lazy_static! {
 }
 
 /// memory set structure, controls virtual-memory space
+/// 表示一个完整的地址空间（多个段构成）
+/// 比如内核地址空间、用户程序地址空间
 pub struct MemorySet {
     page_table: PageTable,
     areas: Vec<MapArea>,
@@ -269,6 +271,8 @@ impl MemorySet {
 }
 
 /// map area structure, controls a contiguous piece of virtual memory
+/// 表示一段连续的区域（比如代码段、堆栈等）
+/// 可以设置映射类型（线性映射/帧映射）和权限（读/写/执行）
 pub struct MapArea {
     vpn_range: VPNRange,
     data_frames: BTreeMap<VirtPageNum, FrameTracker>,

@@ -56,9 +56,11 @@ impl PageTableEntry {
 }
 
 /// page table structure
+/// 负责创建、修改、查询页表项（PTE）
+/// 下面实现的函数都是对页表项的操作
 pub struct PageTable {
-    root_ppn: PhysPageNum,
-    frames: Vec<FrameTracker>,
+    root_ppn: PhysPageNum,//根页表物理页号
+    frames: Vec<FrameTracker>,//分配的所有页表帧
 }
 
 /// Assume that it won't oom when creating/mapping.
@@ -113,18 +115,24 @@ impl PageTable {
         }
         result
     }
+
+    ///map()：建立虚拟地址->物理地址的映射关系
     #[allow(unused)]
     pub fn map(&mut self, vpn: VirtPageNum, ppn: PhysPageNum, flags: PTEFlags) {
         let pte = self.find_pte_create(vpn).unwrap();
         assert!(!pte.is_valid(), "vpn {:?} is mapped before mapping", vpn);
         *pte = PageTableEntry::new(ppn, flags | PTEFlags::V);
     }
+
+    ///unmap()：解除虚拟地址->物理地址的映射关系
     #[allow(unused)]
     pub fn unmap(&mut self, vpn: VirtPageNum) {
         let pte = self.find_pte(vpn).unwrap();
         assert!(pte.is_valid(), "vpn {:?} is invalid before unmapping", vpn);
         *pte = PageTableEntry::empty();
     }
+
+    ///translate()：虚拟地址->物理地址查询
     pub fn translate(&self, vpn: VirtPageNum) -> Option<PageTableEntry> {
         self.find_pte(vpn).map(|pte| *pte)
     }
