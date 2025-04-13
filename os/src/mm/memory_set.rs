@@ -38,7 +38,7 @@ lazy_static! {
 
 pub struct MemorySet {
     page_table: PageTable,
-    areas: Vec<MapArea>,
+    pub areas: Vec<MapArea>,
 }
 
 impl MemorySet {
@@ -204,7 +204,7 @@ impl MemorySet {
 }
 
 pub struct MapArea {
-    vpn_range: VPNRange,
+    pub vpn_range: VPNRange,
     data_frames: BTreeMap<VirtPageNum, FrameTracker>,
     map_type: MapType,
     map_perm: MapPermission,
@@ -243,12 +243,24 @@ impl MapArea {
     }
     #[allow(unused)]
     pub fn unmap_one(&mut self, page_table: &mut PageTable, vpn: VirtPageNum) {
+        // 检查页是否已存在于页表中
+        let pte_opt = page_table.translate(vpn);
+        if pte_opt.is_none() {
+            return;
+        }
+        
+        // 检查页是否属于当前MapArea
+        if !self.vpn_range.contains(vpn) {
+            return;
+        }
+        
         match self.map_type {
             MapType::Framed => {
                 self.data_frames.remove(&vpn);
             }
             _ => {}
         }
+        
         page_table.unmap(vpn);
     }
     pub fn map(&mut self, page_table: &mut PageTable) {

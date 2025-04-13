@@ -193,3 +193,9 @@ impl<T> Iterator for SimpleRangeIterator<T> where
     }
 }
 pub type VPNRange = SimpleRange<VirtPageNum>;
+
+impl VPNRange {
+    pub fn contains(&self, vpn: VirtPageNum) -> bool {
+        self.get_start() <= vpn && vpn < self.get_end()
+    }
+}

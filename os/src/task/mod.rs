@@ -165,31 +165,60 @@ pub fn task_mmap(start_va: VirtAddr, end_va: VirtAddr, permission: MapPermission
     let current = inner.current_task;
     let memory_set = &mut inner.tasks[current].memory_set;
     
+    // 检查每个页是否已被映射
+    // 注意：由于页表项在unmap后可能仍显示为已映射，我们应该检查areas而不是页表
+    let mut has_mapped = false;
     for vpn in vpn_range {
-        if let Some(_) = memory_set.translate(vpn) {
-            return -1;
+        for area in memory_set.areas.iter() {
+            if area.vpn_range.contains(vpn) {
+                has_mapped = true;
+                break;
+            }
+        }
+        if has_mapped {
+            break;
         }
     }
     
+    if has_mapped {
+        return -1;
+    }
+    
+    // 创建新的内存映射
     memory_set.insert_framed_area(start_va, end_va, permission);
     0
 }
 
 pub fn task_munmap(start_va: VirtAddr, end_va: VirtAddr) -> isize {
-    let vpn_range = VPNRange::new(start_va.floor(), end_va.ceil());
-    
     let mut inner = TASK_MANAGER.inner.exclusive_access();
     let current = inner.current_task;
     let memory_set = &mut inner.tasks[current].memory_set;
     
-    for vpn in vpn_range {
-        if memory_set.translate(vpn).is_none() {
-            return -1;
+    // 获取页范围
+    let start_vpn = start_va.floor();
+    let end_vpn = end_va.ceil();
+    
+    // 检查是否有匹配的区域
+    let mut found_area = false;
+    for (_, area) in memory_set.areas.iter().enumerate() {
+        if area.vpn_range.get_start() == start_vpn && 
+           area.vpn_range.get_end() == end_vpn {
+            found_area = true;
+            break;
         }
     }
     
-    memory_set.remove_area_with_start_vpn(start_va.floor());
-    0
+    if !found_area {
+        return -1;
+    }
+    
+    // 找到完全匹配的区域，移除它
+    let result = memory_set.remove_area_with_start_vpn(start_vpn);
+    if result.is_some() {
+        0
+    } else {
+        -1
+    }
 }
 
 pub fn task_have_mapped(vpn: VirtPageNum) -> bool {

@@ -116,10 +116,18 @@ impl PageTable {
         assert!(!pte.is_valid(), "vpn {:?} is mapped before mapping", vpn);
         *pte = PageTableEntry::new(ppn, flags | PTEFlags::V);
     }
-    #[allow(unused)]
     pub fn unmap(&mut self, vpn: VirtPageNum) {
-        let pte = self.find_pte_create(vpn).unwrap();
-        assert!(pte.is_valid(), "vpn {:?} is invalid before unmapping", vpn);
+        let pte = self.find_pte_create(vpn);
+        if pte.is_none() {
+            return;
+        }
+        
+        let pte = pte.unwrap();
+        // 如果PTE已经无效，不需要再次清除
+        if !pte.is_valid() {
+            return;
+        }
+        
         *pte = PageTableEntry::empty();
     }
     pub fn translate(&self, vpn: VirtPageNum) -> Option<PageTableEntry> {

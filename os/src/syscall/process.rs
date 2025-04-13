@@ -64,10 +64,11 @@ pub fn sys_mmap(start: usize, len: usize, prot: usize) -> isize {
     }
 
     // 将长度按页向上取整
-    let mut length = len;
-    if len % PAGE_SIZE != 0 {
-        length = (len / PAGE_SIZE + 1) * PAGE_SIZE;
-    }
+    let length = if len % PAGE_SIZE == 0 {
+        len
+    } else {
+        (len / PAGE_SIZE + 1) * PAGE_SIZE
+    };
 
     // 构建映射权限
     let mut permission = MapPermission::U;
@@ -84,7 +85,7 @@ pub fn sys_mmap(start: usize, len: usize, prot: usize) -> isize {
 }
 
 pub fn sys_munmap(start: usize, len: usize) -> isize {
-    // 检查参数
+    // 检查参数合法性
     if start % PAGE_SIZE != 0 {
         return -1;
     }
@@ -93,15 +94,15 @@ pub fn sys_munmap(start: usize, len: usize) -> isize {
     }
     
     // 将长度按页向上取整
-    let mut length = len;
-    if len % PAGE_SIZE != 0 {
-        length = (len / PAGE_SIZE + 1) * PAGE_SIZE;
-    }
+    let length = if len % PAGE_SIZE == 0 {
+        len
+    } else {
+        (len / PAGE_SIZE + 1) * PAGE_SIZE
+    };
 
-    // 确保传入的参数和之前mmap的参数完全一致
+    // 使用辅助函数完成munmap
     let start_va = VirtAddr::from(start);
     let end_va = VirtAddr::from(start + length);
     
-    // 使用辅助函数完成munmap
     task_munmap(start_va, end_va)
 }
