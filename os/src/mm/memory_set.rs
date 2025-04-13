@@ -15,6 +15,7 @@ use crate::config::{
     TRAP_CONTEXT,
     USER_STACK_SIZE
 };
+use core::arch::asm;
 
 extern "C" {
     fn stext();
@@ -187,6 +188,18 @@ impl MemorySet {
     }
     pub fn translate(&self, vpn: VirtPageNum) -> Option<PageTableEntry> {
         self.page_table.translate(vpn)
+    }
+
+    /// 移除从指定虚拟页号开始的内存区域映射
+    pub fn remove_area_with_start_vpn(&mut self, start_vpn: VirtPageNum) -> Option<()> {
+        if let Some((idx, area)) = self.areas.iter_mut().enumerate()
+            .find(|(_, area)| area.vpn_range.get_start() == start_vpn) {
+            area.unmap(&mut self.page_table);
+            self.areas.remove(idx);
+            Some(())
+        } else {
+            None
+        }
     }
 }
 

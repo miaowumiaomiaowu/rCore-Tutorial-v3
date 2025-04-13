@@ -3,12 +3,13 @@ mod switch;
 mod task;
 
 use crate::loader::{get_num_app, get_app_data};
-use crate::trap::TrapContext;
+use crate::trap::{TrapContext, trap_handler};
 use crate::sync::UPSafeCell;
 use lazy_static::*;
 use switch::__switch;
 use task::{TaskControlBlock, TaskStatus};
 use alloc::vec::Vec;
+use crate::mm::{VirtAddr, VPNRange, MapPermission, VirtPageNum};
 
 pub use context::TaskContext;
 
@@ -115,6 +116,12 @@ impl TaskManager {
             panic!("All applications completed!");
         }
     }
+
+    fn get_current_task_cx_ptr2(&self) -> *mut TaskContext {
+        let inner = self.inner.exclusive_access();
+        let current = inner.current_task;
+        &inner.tasks[current].task_cx as *const TaskContext as *mut TaskContext
+    }
 }
 
 pub fn run_first_task() {
@@ -149,4 +156,44 @@ pub fn current_user_token() -> usize {
 
 pub fn current_trap_cx() -> &'static mut TrapContext {
     TASK_MANAGER.get_current_trap_cx()
+}
+
+pub fn task_mmap(start_va: VirtAddr, end_va: VirtAddr, permission: MapPermission) -> isize {
+    let vpn_range = VPNRange::new(start_va.floor(), end_va.ceil());
+    
+    let mut inner = TASK_MANAGER.inner.exclusive_access();
+    let current = inner.current_task;
+    let memory_set = &mut inner.tasks[current].memory_set;
+    
+    for vpn in vpn_range {
+        if let Some(_) = memory_set.translate(vpn) {
+            return -1;
+        }
+    }
+    
+    memory_set.insert_framed_area(start_va, end_va, permission);
+    0
+}
+
+pub fn task_munmap(start_va: VirtAddr, end_va: VirtAddr) -> isize {
+    let vpn_range = VPNRange::new(start_va.floor(), end_va.ceil());
+    
+    let mut inner = TASK_MANAGER.inner.exclusive_access();
+    let current = inner.current_task;
+    let memory_set = &mut inner.tasks[current].memory_set;
+    
+    for vpn in vpn_range {
+        if memory_set.translate(vpn).is_none() {
+            return -1;
+        }
+    }
+    
+    memory_set.remove_area_with_start_vpn(start_va.floor());
+    0
+}
+
+pub fn task_have_mapped(vpn: VirtPageNum) -> bool {
+    let inner = TASK_MANAGER.inner.exclusive_access();
+    let current = inner.current_task;
+    inner.tasks[current].memory_set.translate(vpn).is_some()
 }
