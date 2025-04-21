@@ -3,6 +3,7 @@ use crate::trap::trap_return;
 
 #[repr(C)]
 /// task context structure containing some registers
+/// 这是为任务切换准备的寄存器结构，用于保存任务的执行现场
 pub struct TaskContext {
     /// return address ( e.g. __restore ) of __switch ASM function
     ra: usize,

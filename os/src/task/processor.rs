@@ -1,4 +1,5 @@
 //!Implementation of [`Processor`] and Intersection of control flow
+//processor是OS中每个CPU的状态管理者,维护当前任务的指针并协助调度
 use super::__switch;
 use super::{TaskContext, TaskControlBlock};
 use super::{TaskStatus, fetch_task};
@@ -9,8 +10,10 @@ use lazy_static::*;
 ///Processor management structure
 pub struct Processor {
     ///The task currently executing on the current processor
+    /// current是一个可选的Arc<TaskControlBlock>，表示当前正在执行的任务
     current: Option<Arc<TaskControlBlock>>,
     ///The basic control flow of each core, helping to select and switch process
+    /// 空闲上下文,用于当前任务切换出后,CPU的控制权转入idle loop
     idle_task_cx: TaskContext,
 }
 
@@ -27,10 +30,12 @@ impl Processor {
         &mut self.idle_task_cx as *mut _
     }
     ///Get current task in moving semanteme
+    /// 取出当前正在执行的任务
     pub fn take_current(&mut self) -> Option<Arc<TaskControlBlock>> {
         self.current.take()
     }
     ///Get current task in cloning semanteme
+    /// 返回当前执行的任务的一份拷贝
     pub fn current(&self) -> Option<Arc<TaskControlBlock>> {
         self.current.as_ref().map(Arc::clone)
     }
@@ -41,14 +46,15 @@ lazy_static! {
 }
 ///The main part of process execution and scheduling
 ///Loop `fetch_task` to get the process that needs to run, and switch the process through `__switch`
+/// run_tasks是调度主循环
 pub fn run_tasks() {
     loop {
         let mut processor = PROCESSOR.exclusive_access();
-        if let Some(task) = fetch_task() {
-            let idle_task_cx_ptr = processor.get_idle_task_cx_ptr();
+        if let Some(task) = fetch_task() {//获取一个就绪任务
+            let idle_task_cx_ptr = processor.get_idle_task_cx_ptr();//获取当前idle上下文指针
             // access coming task TCB exclusively
             let mut task_inner = task.inner_exclusive_access();
-            let next_task_cx_ptr = &task_inner.task_cx as *const TaskContext;
+            let next_task_cx_ptr = &task_inner.task_cx as *const TaskContext;//获取即将执行的任务的上下文地址
             task_inner.task_status = TaskStatus::Running;
             drop(task_inner);
             // release coming task TCB manually
@@ -56,7 +62,7 @@ pub fn run_tasks() {
             // release processor manually
             drop(processor);
             unsafe {
-                __switch(idle_task_cx_ptr, next_task_cx_ptr);
+                __switch(idle_task_cx_ptr, next_task_cx_ptr);//进行任务切换（从idle->任务）
             }
         }
     }
@@ -70,12 +76,14 @@ pub fn current_task() -> Option<Arc<TaskControlBlock>> {
     PROCESSOR.exclusive_access().current()
 }
 ///Get token of the address space of current task
+/// 返回当前用户地址空间的token
 pub fn current_user_token() -> usize {
     let task = current_task().unwrap();
     let token = task.inner_exclusive_access().get_user_token();
     token
 }
 ///Get the mutable reference to trap context of current task
+/// 返回当前任务的trap上下文指针
 pub fn current_trap_cx() -> &'static mut TrapContext {
     current_task()
         .unwrap()
@@ -83,6 +91,7 @@ pub fn current_trap_cx() -> &'static mut TrapContext {
         .get_trap_cx()
 }
 ///Return to idle control flow for new scheduling
+/// 手动切换回idle，等待下一次调度
 pub fn schedule(switched_task_cx_ptr: *mut TaskContext) {
     let mut processor = PROCESSOR.exclusive_access();
     let idle_task_cx_ptr = processor.get_idle_task_cx_ptr();

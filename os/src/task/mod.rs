@@ -40,9 +40,10 @@ pub use processor::{
 /// Suspend the current 'Running' task and run the next task in task list.
 pub fn suspend_current_and_run_next() {
     // There must be an application running.
-    let task = take_current_task().unwrap();
+    let task = take_current_task().unwrap();//通过take_current_task()获取当前运行的任务控制块TaskControlBlock,并将全局PROCESSOR中的current置为None
 
     // ---- access current TCB exclusively
+    // 进入该任务的内部数据区域，修改它的状态为 Ready，表示“我准备好了但现在不跑了”。同时获取 task_cx_ptr，它是保存当前任务上下文（TaskContext）的指针，用于后面调度时保存当前 CPU 上的寄存器值。
     let mut task_inner = task.inner_exclusive_access();
     let task_cx_ptr = &mut task_inner.task_cx as *mut TaskContext;
     // Change status to Ready
@@ -51,8 +52,10 @@ pub fn suspend_current_and_run_next() {
     // ---- release current PCB
 
     // push back to ready queue.
+    // 把任务重新加入 ready queue 的尾部，等候下一次调度。add_task() 就是任务管理器中的入队操作。
     add_task(task);
     // jump to scheduling cycle
+    // 执行调度器，传入当前任务的 task_cx_ptr，用于后续上下文切换。
     schedule(task_cx_ptr);
 }
 

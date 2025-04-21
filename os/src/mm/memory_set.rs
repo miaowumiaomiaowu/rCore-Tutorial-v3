@@ -235,14 +235,15 @@ impl MemorySet {
     }
     ///Clone a same `MemorySet`
     pub fn from_existed_user(user_space: &Self) -> Self {
+        //创建一个空的地址空间new_bare(),即为子进程分配一个全新的内存空间
         let mut memory_set = Self::new_bare();
-        // map trampoline
+        // map trampoline，添加跳板页，跳板页是提前在内存中映射的特殊页，用于内核和用户态之间的转换。因为 ELF 解析时没有单独映射跳板页，所以需要在这里手动添加。
         memory_set.map_trampoline();
-        // copy data sections/trap_context/user_stack
+        // 遍历父进程的每个逻辑段（user_space.areas.iter()），并且通过 MapArea::from_another(area) 复制父进程的逻辑段映射。
         for area in user_space.areas.iter() {
             let new_area = MapArea::from_another(area);
             memory_set.push(new_area, None);
-            // copy data from another space
+            // 数据复制：遍历每个虚拟页面（vpn_range），通过 user_space.translate(vpn) 获取源页帧（父进程的物理页），然后使用 copy_from_slice 将数据从父进程的物理页复制到子进程的物理页。
             for vpn in area.vpn_range {
                 let src_ppn = user_space.translate(vpn).unwrap().ppn();
                 let dst_ppn = memory_set.translate(vpn).unwrap().ppn();
@@ -295,12 +296,14 @@ impl MapArea {
             map_perm,
         }
     }
+
+    /// 从父进程的逻辑段复制一个新的逻辑段（不复制物理页帧）
     pub fn from_another(another: &Self) -> Self {
         Self {
-            vpn_range: VPNRange::new(another.vpn_range.get_start(), another.vpn_range.get_end()),
-            data_frames: BTreeMap::new(),
-            map_type: another.map_type,
-            map_perm: another.map_perm,
+            vpn_range: VPNRange::new(another.vpn_range.get_start(), another.vpn_range.get_end()),//虚拟地址范围
+            data_frames: BTreeMap::new(),//data_frames为空，因为没有真正映射到物理页帧
+            map_type: another.map_type,//映射类型
+            map_perm: another.map_perm,//权限
         }
     }
     pub fn map_one(&mut self, page_table: &mut PageTable, vpn: VirtPageNum) {
