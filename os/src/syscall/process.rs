@@ -28,12 +28,18 @@ pub fn sys_yield() -> isize {
 }
 
 pub fn sys_get_time(ts: *mut TimeVal, _tz: usize) -> isize {
-    let us = get_time_us();
-    let token = current_user_token();
+    let us = get_time_us();//获取当前时间，获取微秒
+    let token = current_user_token();// 获取任务的页表
     let mut buffers = translated_byte_buffer(token, ts as *const u8, core::mem::size_of::<TimeVal>());
+    /// 这个函数接收当前任务的页表token，和用户传入的虚拟地址指针ts，和期望写入的长度(TimeVal的大小）
+    /// 它会查找页表，将用户虚拟地址转换为内核可以直接访问的物理地址
+    /// 或者更准确地说，是内核映射的一段缓冲区，其内容对应用户虚拟地址指向的物理内存
     if buffers.len() == 0 {
         return -1;
     }
+    ///将获取到的时间（秒和微秒）写入到这个内核可以直接访问的缓冲区中。
+    /// 由于这段缓冲区映射到了用户空间指针指向的物理内存，用户空间后续就能读到更新后的值。
+
     unsafe {
         let time_val = buffers[0].as_mut_ptr() as *mut TimeVal;
         *time_val = TimeVal {
@@ -63,7 +69,7 @@ pub fn sys_mmap(start: usize, len: usize, prot: usize) -> isize {
         return 0;
     }
 
-    // 将长度按页向上取整
+    // 将长度按页向上取整,取整到PAGE_SIZE的整数倍
     let length = if len % PAGE_SIZE == 0 {
         len
     } else {
@@ -82,6 +88,7 @@ pub fn sys_mmap(start: usize, len: usize, prot: usize) -> isize {
     
     // 通过辅助函数完成mmap
     task_mmap(start_va, end_va, permission)
+    //传入转换后的虚拟地址范围和内核权限
 }
 
 pub fn sys_munmap(start: usize, len: usize) -> isize {

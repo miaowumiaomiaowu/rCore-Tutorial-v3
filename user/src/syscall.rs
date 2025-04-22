@@ -10,14 +10,14 @@ pub const SYSCALL_LINKAT: usize = 37;
 pub const SYSCALL_FSTAT: usize = 80;
 pub const SYSCALL_EXIT: usize = 93;
 pub const SYSCALL_YIELD: usize = 124;
-pub const SYSCALL_GETTIMEOFDAY: usize = 169;
+pub const SYSCALL_GETTIMEOFDAY: usize = 169; //
 pub const SYSCALL_GETPID: usize = 172;
 pub const SYSCALL_FORK: usize = 220;
 pub const SYSCALL_EXEC: usize = 221;
 pub const SYSCALL_WAITPID: usize = 260;
 pub const SYSCALL_SET_PRIORITY: usize = 140;
-pub const SYSCALL_MUNMAP: usize = 215;
-pub const SYSCALL_MMAP: usize = 222;
+pub const SYSCALL_MUNMAP: usize = 215;//
+pub const SYSCALL_MMAP: usize = 222;//
 pub const SYSCALL_SPAWN: usize = 400;
 pub const SYSCALL_MAIL_READ: usize = 401;
 pub const SYSCALL_MAIL_WRITE: usize = 402;
@@ -137,6 +137,8 @@ pub fn sys_yield() -> isize {
 
 pub fn sys_get_time(time: &TimeVal, tz: usize) -> isize {
     syscall(SYSCALL_GETTIMEOFDAY, [time as *const _ as usize, tz, 0])
+    // 封装ecall指令，将系统调用号 SYSCALL_GETTIMEOFDAY (值为 169) 
+    // 和参数（TimeVal 指针、tz）放入指定寄存器
 }
 
 pub fn sys_getpid() -> isize {
@@ -161,6 +163,7 @@ pub fn sys_set_priority(prio: isize) -> isize {
 
 pub fn sys_mmap(start: usize, len: usize, prot: usize) -> isize {
     syscall(SYSCALL_MMAP, [start, len, prot])
+    // 封装ecall，使用系统调用号SYSCALL_MMAP
 }
 
 pub fn sys_munmap(start: usize, len: usize) -> isize {

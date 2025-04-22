@@ -163,10 +163,10 @@ pub fn task_mmap(start_va: VirtAddr, end_va: VirtAddr, permission: MapPermission
     
     let mut inner = TASK_MANAGER.inner.exclusive_access();
     let current = inner.current_task;
-    let memory_set = &mut inner.tasks[current].memory_set;
+    let memory_set = &mut inner.tasks[current].memory_set;// 获取当前任务的memory_set
     
-    // 检查每个页是否已被映射
-    // 注意：由于页表项在unmap后可能仍显示为已映射，我们应该检查areas而不是页表
+    /// 冲突检查： 遍历 MemorySet 中已有的 areas，检查请求的虚拟地址范围 [start_va, end_va) 
+    /// 是否与任何现有 MapArea 的 vpn_range 有重叠。如果存在重叠，返回 -1。
     let mut has_mapped = false;
     for vpn in vpn_range {
         for area in memory_set.areas.iter() {
@@ -184,7 +184,7 @@ pub fn task_mmap(start_va: VirtAddr, end_va: VirtAddr, permission: MapPermission
         return -1;
     }
     
-    // 创建新的内存映射
+    /// 插入新区域： 如果没有冲突，调用 memory_set.insert_framed_area(start_va, end_va, permission)。
     memory_set.insert_framed_area(start_va, end_va, permission);
     0
 }

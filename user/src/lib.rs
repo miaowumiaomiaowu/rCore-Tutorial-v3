@@ -58,6 +58,7 @@ bitflags! {
 
 #[repr(C)]
 #[derive(Debug, Default)]
+// 创建一个TimeVal实例
 pub struct TimeVal {
     pub sec: usize,
     pub usec: usize,
@@ -163,8 +164,8 @@ pub fn yield_() -> isize {
 }
 
 pub fn get_time() -> isize {
-    let time = TimeVal::new();
-    match sys_get_time(&time, 0) {
+    let time = TimeVal::new();// 创建一个TimeVal实例
+    match sys_get_time(&time, 0) { // 调用 sys_get_time 系统调用，将 TimeVal 实例的指针（虚拟地址）和 tz（时区，这里未使用，传0）作为参数传递给内核
         0 => ((time.sec & 0xffff) * 1000 + time.usec / 1000) as isize,
         _ => -1,
     }
@@ -222,6 +223,7 @@ pub fn sleep(period_ms: usize) {
 pub fn mmap(start: usize, len: usize, prot: usize) -> isize {
     sys_mmap(start, len, prot)
 }
+/// 调用sys_mmap系统调用，传毒起始虚拟地址start，长度len，和权限prot
 
 pub fn munmap(start: usize, len: usize) -> isize {
     sys_munmap(start, len)
