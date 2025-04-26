@@ -1,6 +1,6 @@
 mod context;
 mod switch;
-mod task;
+pub mod task;
 mod manager;
 mod processor;
 mod pid;

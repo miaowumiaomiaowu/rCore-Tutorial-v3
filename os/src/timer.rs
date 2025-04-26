@@ -10,7 +10,7 @@ pub fn get_time() -> usize {
 }
 
 pub fn get_time_us() -> usize {
-    time::read() / (CLOCK_FREQ / MICRO_PER_SEC)
+    time::read() * MICRO_PER_SEC / CLOCK_FREQ
 }
 
 pub fn set_next_trigger() {

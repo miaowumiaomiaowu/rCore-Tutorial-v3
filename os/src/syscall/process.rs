@@ -12,6 +12,7 @@ use crate::mm::{
 use crate::loader::get_app_data_by_name;
 use alloc::sync::Arc;
 use crate::timer::get_time_us;
+use crate::task::task::TaskControlBlock;
 
 #[repr(C)]
 #[derive(Debug)]
@@ -99,13 +100,78 @@ pub fn sys_waitpid(pid: isize, exit_code_ptr: *mut i32) -> isize {
     // ---- release current PCB lock automatically
 }
 
-pub fn sys_get_time(_ts: *mut TimeVal, _tz: usize) -> isize {
-    let _us = get_time_us();
-    // unsafe {
-    //     *ts = TimeVal {
-    //         sec: us / 1_000_000,
-    //         usec: us % 1_000_000,
-    //     };
-    // }
+pub fn sys_get_time(ts: *mut TimeVal, _tz: usize) -> isize {
+    let us = get_time_us();
+    let token = current_user_token();
+    let ts_kernel = translated_refmut(token, ts);
+    *ts_kernel = TimeVal {
+        sec: us / 1_000_000,
+        usec: us % 1_000_000,
+    };
     0
+}
+
+// 与fork+exec不同，spawn直接创建一个新的进程执行目标程序，而不复制当前进程的地址空间
+pub fn sys_spawn(path: *const u8) -> isize {
+    let token = current_user_token();
+    let path = translated_str(token, path);
+    if let Some(data) = get_app_data_by_name(path.as_str()) {
+        // 直接创建一个新的任务控制块
+        let new_task = Arc::new(TaskControlBlock::new(data));
+        let pid = new_task.getpid();
+        // 将当前进程设为新进程的父进程
+        let current_task = current_task().unwrap();
+        let mut current_inner = current_task.inner_exclusive_access();
+        current_inner.children.push(new_task.clone());
+        // 添加新任务到调度器
+        add_task(new_task);
+        pid as isize
+    } else {
+        -1
+    }
+}
+
+// mmap和munmap系统调用
+pub fn sys_mmap(start: usize, len: usize, prot: usize) -> isize {
+    let task = current_task().unwrap();
+    let mut inner = task.inner_exclusive_access();
+    
+    // 检查参数是否合法
+    // 映射起始地址必须是页对齐的
+    if start % 4096 != 0 {
+        return -1;
+    }
+    // 映射长度必须大于0
+    if len <= 0 {
+        return -1;
+    }
+    
+    // 添加映射
+    let result = inner.memory_set.mmap(start, len, prot);
+    if result.is_ok() {
+        0
+    } else {
+        -1
+    }
+}
+
+pub fn sys_munmap(start: usize, len: usize) -> isize {
+    let task = current_task().unwrap();
+    let mut inner = task.inner_exclusive_access();
+    
+    // 检查参数是否合法
+    if start % 4096 != 0 {
+        return -1;
+    }
+    if len <= 0 {
+        return -1;
+    }
+    
+    // 取消映射
+    let result = inner.memory_set.munmap(start, len);
+    if result.is_ok() {
+        0
+    } else {
+        -1
+    }
 }

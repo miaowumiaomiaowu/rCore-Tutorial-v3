@@ -15,6 +15,7 @@ use crate::config::{
     TRAP_CONTEXT,
     USER_STACK_SIZE
 };
+use core::arch::asm;
 
 extern "C" {
     fn stext();
@@ -215,6 +216,98 @@ impl MemorySet {
     pub fn recycle_data_pages(&mut self) {
         //*self = Self::new_bare();
         self.areas.clear();
+    }
+    // 实现mmap系统调用
+    pub fn mmap(&mut self, start: usize, len: usize, prot: usize) -> Result<(), ()> {
+        // 计算结束地址（不包含）
+        let end = start + len;
+        
+        // 检查参数是否合法
+        if start % PAGE_SIZE != 0 {
+            return Err(());
+        }
+        if len <= 0 {
+            return Err(());
+        }
+        // 检查prot参数是否合法 (只能包含 R=1, W=2, X=4)
+        if prot & !7 != 0 {
+            return Err(());
+        }
+        // 如果prot为0，也是不合法的（至少需要有一种权限）
+        if prot == 0 {
+            return Err(());
+        }
+        
+        // 检查地址是否已被映射
+        let start_vpn = VirtPageNum(start / PAGE_SIZE);
+        let end_vpn = VirtPageNum((end + PAGE_SIZE - 1) / PAGE_SIZE);
+        
+        // 检查是否与现有区域重叠
+        for area in self.areas.iter() {
+            if area.vpn_range.get_start() < end_vpn && start_vpn < area.vpn_range.get_end() {
+                return Err(());
+            }
+        }
+        
+        // 计算映射权限
+        let mut map_perm = MapPermission::U;
+        if (prot & 1) != 0 { map_perm |= MapPermission::R; }
+        if (prot & 2) != 0 { map_perm |= MapPermission::W; }
+        if (prot & 4) != 0 { map_perm |= MapPermission::X; }
+        
+        // 创建新的映射区域
+        let map_area = MapArea::new(
+            VirtAddr(start),
+            VirtAddr(end),
+            MapType::Framed,
+            map_perm,
+        );
+        
+        // 执行映射
+        self.push(map_area, None);
+        Ok(())
+    }
+    
+    // 实现munmap系统调用
+    pub fn munmap(&mut self, start: usize, len: usize) -> Result<(), ()> {
+        // 检查参数是否合法
+        if start % PAGE_SIZE != 0 {
+            return Err(());
+        }
+        if len <= 0 {
+            return Err(());
+        }
+        
+        let end = start + len;
+        let start_vpn = VirtPageNum(start / PAGE_SIZE);
+        let end_vpn = VirtPageNum((end + PAGE_SIZE - 1) / PAGE_SIZE);
+        
+        // 找到所有与要取消映射的区域完全匹配的区域
+        let mut exact_match = false;
+        let mut to_unmap = Vec::new();
+        
+        for (idx, area) in self.areas.iter().enumerate() {
+            // 检查是否完全匹配
+            if area.vpn_range.get_start() == start_vpn && area.vpn_range.get_end() == end_vpn {
+                exact_match = true;
+                to_unmap.push(idx);
+                break;
+            }
+        }
+        
+        // 如果没有找到完全匹配的区域，返回错误
+        if !exact_match {
+            return Err(());
+        }
+        
+        // 取消映射所有找到的区域
+        for &idx in to_unmap.iter().rev() {
+            let area = &mut self.areas[idx];
+            area.unmap(&mut self.page_table);
+            self.areas.remove(idx);
+        }
+        
+        Ok(())
     }
 }
 
