@@ -1,5 +1,3 @@
-// user/src/syscall.rs
-// 移除未使用的导入
 use super::{TimeVal, TaskInfo, Stat};
 
 pub const SYSCALL_OPENAT: usize = 56;
