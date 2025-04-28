@@ -1,0 +1,116 @@
+make[1]: Entering directory '/home/hanjiayi/myRcore/rCore-sp23/user'
+warning: `/home/hanjiayi/.cargo/config` is deprecated in favor of `config.toml`
+note: if you need to support cargo 1.38 or earlier, you can symlink `config` to `config.toml`
+warning: the feature `panic_info_message` has been stable since 1.81.0 and no longer requires an attribute to enable
+ --> src/lib.rs:4:12
+  |
+4 | #![feature(panic_info_message)]
+  |            ^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(stable_features)]` on by default
+
+warning: `user_lib` (lib) generated 1 warning
+    Finished `release` profile [optimized + debuginfo] target(s) in 0.02s
+make[1]: Leaving directory '/home/hanjiayi/myRcore/rCore-sp23/user'
+Running platform: qemu
+warning: `/home/hanjiayi/.cargo/config` is deprecated in favor of `config.toml`
+note: if you need to support cargo 1.38 or earlier, you can symlink `config` to `config.toml`
+   Compiling memchr v2.7.4
+   Compiling regex-syntax v0.8.5
+   Compiling semver-parser v0.7.0
+   Compiling lazy_static v1.5.0
+   Compiling static_assertions v1.1.0
+   Compiling bit_field v0.10.2
+   Compiling os v0.1.0 (/home/hanjiayi/myRcore/rCore-sp23/os)
+   Compiling spin v0.9.8
+   Compiling bitflags v1.3.2
+   Compiling log v0.4.26
+   Compiling sbi-spec v0.0.4
+   Compiling sbi-rt v0.0.2
+   Compiling semver v0.9.0
+   Compiling rustc_version v0.2.3
+   Compiling aho-corasick v1.1.3
+   Compiling bare-metal v0.2.5
+   Compiling regex-automata v0.4.9
+   Compiling regex v1.11.1
+   Compiling riscv-target v0.1.2
+   Compiling riscv v0.6.0 (https://github.com/rcore-os/riscv#11d43cf7)
+warning: the feature `panic_info_message` has been stable since 1.81.0 and no longer requires an attribute to enable
+ --> src/main.rs:3:12
+  |
+3 | #![feature(panic_info_message)]
+  |            ^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(stable_features)]` on by default
+
+warning: the feature `strict_provenance` has been stable since 1.84.0 and no longer requires an attribute to enable
+ --> src/main.rs:4:12
+  |
+4 | #![feature(strict_provenance)]
+  |            ^^^^^^^^^^^^^^^^^
+
+warning: methods `exit_success` and `exit_failure` are never used
+  --> src/boards/qemu.rs:19:8
+   |
+10 | pub trait QEMUExit {
+   |           -------- methods in this trait
+...
+19 |     fn exit_success(&self) -> !;
+   |        ^^^^^^^^^^^^
+...
+22 |     fn exit_failure(&self) -> !;
+   |        ^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` on by default
+
+warning: creating a shared reference to mutable static is discouraged
+  --> src/syscall/fs.rs:14:43
+   |
+14 |         (app_start + app_size <= unsafe { USER_STACK.get_sp().addr() } &&
+   |                                           ^^^^^^^^^^^^^^^^^^^ shared reference to mutable static
+   |
+   = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2024/static-mut-references.html>
+   = note: shared references to mutable statics are dangerous; it's undefined behavior if the static is mutated or if a mutable reference is created for it while the shared reference lives
+   = note: `#[warn(static_mut_refs)]` on by default
+
+warning: creating a shared reference to mutable static is discouraged
+  --> src/syscall/fs.rs:15:31
+   |
+15 |         app_start >= unsafe { USER_STACK.get_sp().addr() - USER_STACK_SIZE } )) {
+   |                               ^^^^^^^^^^^^^^^^^^^ shared reference to mutable static
+   |
+   = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2024/static-mut-references.html>
+   = note: shared references to mutable statics are dangerous; it's undefined behavior if the static is mutated or if a mutable reference is created for it while the shared reference lives
+
+warning: creating a shared reference to mutable static is discouraged
+   --> src/batch.rs:156:19
+    |
+156 |           __restore(KERNEL_STACK.push_context(TrapContext::app_init_context(
+    |  ___________________^
+157 | |             APP_BASE_ADDRESS,
+158 | |             USER_STACK.get_sp() as *const _ as usize,
+159 | |         )) as *const _ as usize);
+    | |__________^ shared reference to mutable static
+    |
+    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2024/static-mut-references.html>
+    = note: shared references to mutable statics are dangerous; it's undefined behavior if the static is mutated or if a mutable reference is created for it while the shared reference lives
+
+warning: creating a shared reference to mutable static is discouraged
+   --> src/batch.rs:158:13
+    |
+158 |             USER_STACK.get_sp() as *const _ as usize,
+    |             ^^^^^^^^^^^^^^^^^^^ shared reference to mutable static
+    |
+    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2024/static-mut-references.html>
+    = note: shared references to mutable statics are dangerous; it's undefined behavior if the static is mutated or if a mutable reference is created for it while the shared reference lives
+
+error: <inline asm>:100:13: Could not find incbin file '../user/target/riscv64gc-unknown-none-elf/release/ch2-bad_address.bin'
+    .incbin "../user/target/riscv64gc-unknown-none-elf/release/ch2-bad_address.bin"
+            ^
+
+warning: `os` (bin "os") generated 7 warnings
+error: could not compile `os` (bin "os"); 7 warnings emitted
+
+Caused by:
+  process didn't exit successfully: `/home/hanjiayi/.rustup/toolchains/nightly-2025-02-18-x86_64-unknown-linux-gnu/bin/rustc --crate-name os --edition=2021 src/main.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type bin --emit=dep-info,link -C opt-level=3 -C embed-bitcode=no -C debuginfo=2 --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=683fad856b9bfc99 -C extra-filename=-8413504b18a428b1 --out-dir /home/hanjiayi/myRcore/rCore-sp23/os/target/riscv64gc-unknown-none-elf/release/deps --target riscv64gc-unknown-none-elf -L dependency=/home/hanjiayi/myRcore/rCore-sp23/os/target/riscv64gc-unknown-none-elf/release/deps -L dependency=/home/hanjiayi/myRcore/rCore-sp23/os/target/release/deps --extern lazy_static=/home/hanjiayi/myRcore/rCore-sp23/os/target/riscv64gc-unknown-none-elf/release/deps/liblazy_static-8d6bec3576f3f3e4.rlib --extern log=/home/hanjiayi/myRcore/rCore-sp23/os/target/riscv64gc-unknown-none-elf/release/deps/liblog-ad15e33d2eec5675.rlib --extern riscv=/home/hanjiayi/myRcore/rCore-sp23/os/target/riscv64gc-unknown-none-elf/release/deps/libriscv-c6047b9b2df5815a.rlib --extern sbi_rt=/home/hanjiayi/myRcore/rCore-sp23/os/target/riscv64gc-unknown-none-elf/release/deps/libsbi_rt-cf17b33094cddd7f.rlib -Clink-arg=-Tsrc/linker.ld -Cforce-frame-pointers=yes` (exit status: 1)
+make: *** [Makefile:53: kernel] Error 101
