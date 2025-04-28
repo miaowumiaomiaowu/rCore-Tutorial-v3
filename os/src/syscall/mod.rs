@@ -39,7 +39,7 @@ use process::*;
 
 use crate::fs::Stat;
 
-/// handle syscall exception with `syscall_id` and other arguments
+/// 系统调用分发，使用match语句，根据系统调用编号将请求分发给具体的sys_处理函数
 pub fn syscall(syscall_id: usize, args: [usize; 4]) -> isize {
     match syscall_id {
         SYSCALL_OPEN => sys_open(args[1] as *const u8, args[2] as u32),

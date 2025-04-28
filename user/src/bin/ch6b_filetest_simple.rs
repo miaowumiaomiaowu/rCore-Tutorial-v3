@@ -1,3 +1,4 @@
+//基本文件操作：创建、写入、关闭、重新打开、读取、比较
 #![no_std]
 #![no_main]
 #![reexport_test_harness_main = "test_main"]

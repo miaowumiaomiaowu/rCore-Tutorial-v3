@@ -1,3 +1,4 @@
+//提供交互式环境，手动运行命令（包括其他测试程序）。
 #![no_std]
 #![no_main]
 #![reexport_test_harness_main = "test_main"]

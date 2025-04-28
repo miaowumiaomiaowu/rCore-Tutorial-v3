@@ -1,3 +1,4 @@
+//文件系统压力测试，快速创建和删除文件。
 #![no_std]
 #![no_main]
 #![reexport_test_harness_main = "test_main"]

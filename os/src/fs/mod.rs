@@ -17,7 +17,7 @@ impl<T: 'static> AnyConvertor for T {
     }
 }
 
-/// trait File for all file types
+/// 定义文件对象的基本操作
 pub trait File: Send + Sync + AnyConvertor {
     /// the file readable?
     fn readable(&self) -> bool;
@@ -33,18 +33,14 @@ pub trait File: Send + Sync + AnyConvertor {
 #[repr(C)]
 #[derive(Debug)]
 pub struct Stat {
-    /// ID of device containing file
-    pub dev: u64,
-    /// inode number
-    pub ino: u64,
-    /// file type and mode
-    pub mode: StatMode,
-    /// number of hard links
-    pub nlink: u32,
-    /// unused pad
-    pub pad: [u64; 7],
+    pub dev: u64,//设备号（硬编码为0）
+    pub ino: u64,//inode编号
+    pub mode: StatMode,//文件类型和模式
+    pub nlink: u32,//硬链接数
+    pub pad: [u64; 7],// 填充以匹配 C 结构体大小
 }
 
+// 定义文件模式 (类型)
 bitflags! {
     /// The mode of a inode
     /// whether a directory or a file
@@ -52,9 +48,9 @@ bitflags! {
         /// null
         const NULL  = 0;
         /// directory
-        const DIR   = 0o040000;
+        const DIR   = 0o040000;//目录
         /// ordinary regular file
-        const FILE  = 0o100000;
+        const FILE  = 0o100000;//普通文件
     }
 }
 

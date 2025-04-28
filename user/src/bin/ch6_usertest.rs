@@ -1,3 +1,4 @@
+// 测试集运行期。负责按顺序执行同一章节其他测试小程序
 #![no_std]
 #![no_main]
 #![reexport_test_harness_main = "test_main"]
@@ -40,6 +41,9 @@ static TESTS: &[&str] = &[
 use user_lib::{spawn, waitpid};
 
 /// 辅助测例，运行所有其他测例。
+/// 测试方法：
+/// 使用 fork 创建子进程，，然后子进程使用 exec 加载并运行具体的测试程序。
+/// 父进程（usertest）使用 waitpid 等待子进程结束，并检查其退出码 (exit code)。
 
 #[no_mangle]
 pub fn main() -> i32 {

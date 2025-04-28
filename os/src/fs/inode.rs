@@ -14,9 +14,7 @@ use bitflags::*;
 use easy_fs::{EasyFileSystem, Inode};
 use lazy_static::*;
 
-/// inode in memory
-/// A wrapper around a filesystem inode
-/// to implement File trait atop
+/// 对底层文件系统INode的一层封装
 pub struct OSInode {
     readable: bool,
     writable: bool,
@@ -110,7 +108,7 @@ impl OpenFlags {
     }
 }
 
-/// Open a file
+/// 一个VFS级别的函数，接受路径和打开标志，负责路径解析（从 ROOT_INODE 开始查找），并返回一个实现了 File trait 的对象（通常是 Arc<OSInode>）
 pub fn open_file(name: &str, flags: OpenFlags) -> Option<Arc<OSInode>> {
     let (readable, writable) = flags.read_write();
     if flags.contains(OpenFlags::CREATE) {

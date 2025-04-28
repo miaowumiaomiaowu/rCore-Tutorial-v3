@@ -1,3 +1,4 @@
+//测试 sys_fstat 获取文件元数据。
 #![no_std]
 #![no_main]
 #![reexport_test_harness_main = "test_main"]

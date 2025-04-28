@@ -1,3 +1,4 @@
+// 模拟 cat 命令，测试文件读取和写到标准输出。
 #![no_std]
 #![no_main]
 #![reexport_test_harness_main = "test_main"]

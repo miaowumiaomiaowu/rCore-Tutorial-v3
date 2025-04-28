@@ -293,7 +293,7 @@ pub fn test_runner(_test: &[&dyn Fn()]) {
     loop {}
 }
 
-//* ch6
+//* 也就是说调用link的话其实调用的事sys_linkat
 pub fn link(old_path: &str, new_path: &str) -> isize {
     sys_linkat(AT_FDCWD as usize, old_path, AT_FDCWD as usize, new_path, 0)
 }

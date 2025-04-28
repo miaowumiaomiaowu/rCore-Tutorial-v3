@@ -1,3 +1,4 @@
+//内核启动的第一个用户进程 (PID 1)。它可以是 shell，也可以是 usertest 运行器。负责初始化用户环境和管理进程。
 #![no_std]
 #![no_main]
 #![reexport_test_harness_main = "test_main"]

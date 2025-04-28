@@ -53,7 +53,7 @@ pub fn enable_timer_interrupt() {
 }
 
 #[no_mangle]
-/// handle an interrupt, exception, or system call from user space
+/// trap处理入口，它负责保存用户态上下文（寄存器等），识别Trap的原因（比如系统调用）
 pub extern "C" fn trap_handler() -> ! {
     user_time_start(); //* ch3-pro2
     set_kernel_trap_entry(); // deal with S Mode trap in kernel
