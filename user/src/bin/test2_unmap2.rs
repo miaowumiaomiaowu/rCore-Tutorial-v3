@@ -1,3 +1,4 @@
+//测试 munmap 的错误处理，尝试取消映射一个与原 mmap 范围不完全匹配的区域，预期 munmap 返回 -1。
 #![no_std]
 #![no_main]
 

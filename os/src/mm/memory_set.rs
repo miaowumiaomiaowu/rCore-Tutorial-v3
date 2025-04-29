@@ -1,3 +1,5 @@
+// 内存集操作
+
 use super::{PageTable, PageTableEntry, PTEFlags};
 use super::{VirtPageNum, VirtAddr, PhysPageNum, PhysAddr};
 use super::{FrameTracker, frame_alloc};
@@ -52,6 +54,7 @@ impl MemorySet {
         self.page_table.token()
     }
     /// Assume that no conflicts.
+    /// 创建一个新的 MapArea，包含虚拟页号范围 (VPNRange)、映射类型 (MapType::Framed) 和权限 (MapPermission)。
     pub fn insert_framed_area(&mut self, start_va: VirtAddr, end_va: VirtAddr, permission: MapPermission) {
         self.push(MapArea::new(
             start_va,
@@ -226,6 +229,9 @@ impl MapArea {
             map_perm,
         }
     }
+
+    /// 调用 frame_alloc 分配一个物理页帧 (FrameTracker)。
+    /// 将分配到的物理页号 (ppn) 和对应的 FrameTracker 存储在 MapArea 的 data_frames (BTreeMap) 中，以 vpn 为键。
     pub fn map_one(&mut self, page_table: &mut PageTable, vpn: VirtPageNum) {
         let ppn: PhysPageNum;
         match self.map_type {
@@ -239,6 +245,8 @@ impl MapArea {
             }
         }
         let pte_flags = PTEFlags::from_bits(self.map_perm.bits).unwrap();
+
+        //调用 page_table.map 方法，在页表中建立 vpn 到 ppn 的映射，并设置相应的权限标志 (PTEFlags)。
         page_table.map(vpn, ppn, pte_flags);
     }
     #[allow(unused)]
@@ -263,6 +271,8 @@ impl MapArea {
         
         page_table.unmap(vpn);
     }
+
+    // 遍历区域内的每个虚拟页号，调用map_one分配一个物理页帧FrameTracker
     pub fn map(&mut self, page_table: &mut PageTable) {
         for vpn in self.vpn_range {
             self.map_one(page_table, vpn);

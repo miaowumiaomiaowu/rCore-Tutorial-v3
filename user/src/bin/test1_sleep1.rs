@@ -1,3 +1,4 @@
+//调用 sleep 函数（内部使用了 get_time 和 yield_），并检查前后时间差，验证 get_time 的准确性。
 #![no_std]
 #![no_main]
 

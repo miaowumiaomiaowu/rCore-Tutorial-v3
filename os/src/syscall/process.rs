@@ -93,21 +93,23 @@ pub fn sys_mmap(start: usize, len: usize, prot: usize) -> isize {
 
 pub fn sys_munmap(start: usize, len: usize) -> isize {
     // 检查参数合法性
+    // 检查 start 地址是否按 PAGE_SIZE 对齐。
     if start % PAGE_SIZE != 0 {
         return -1;
     }
+    //如果 len 为 0，直接返回 0。
     if len == 0 {
         return 0;
     }
     
-    // 将长度按页向上取整
+    // 长度处理: 将 len 向上取整到 PAGE_SIZE 的整数倍。
     let length = if len % PAGE_SIZE == 0 {
         len
     } else {
         (len / PAGE_SIZE + 1) * PAGE_SIZE
     };
 
-    // 使用辅助函数完成munmap
+    // 使调用辅助函数: 将处理后的起始/结束虚拟地址 (VirtAddr) 传递给 task_munmap 函数。
     let start_va = VirtAddr::from(start);
     let end_va = VirtAddr::from(start + length);
     

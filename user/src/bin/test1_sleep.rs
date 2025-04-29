@@ -1,3 +1,4 @@
+// 通过循环调用 get_time 和 yield_ 来模拟等待一段时间，间接测试 get_time 是否能返回递增的值。
 #![no_std]
 #![no_main]
 

@@ -1,3 +1,5 @@
+//任务内存管理
+
 mod context;
 mod switch;
 mod task;
@@ -158,6 +160,7 @@ pub fn current_trap_cx() -> &'static mut TrapContext {
     TASK_MANAGER.get_current_trap_cx()
 }
 
+// 获取当前任务的可变MemorySet
 pub fn task_mmap(start_va: VirtAddr, end_va: VirtAddr, permission: MapPermission) -> isize {
     let vpn_range = VPNRange::new(start_va.floor(), end_va.ceil());
     
@@ -185,6 +188,7 @@ pub fn task_mmap(start_va: VirtAddr, end_va: VirtAddr, permission: MapPermission
     }
 
     
+    //没用冲突，调用memory_set.insert_framed_area来添加新的映射区域
     memory_set.insert_framed_area(start_va, end_va, permission);
     0
 }
@@ -192,13 +196,15 @@ pub fn task_mmap(start_va: VirtAddr, end_va: VirtAddr, permission: MapPermission
 pub fn task_munmap(start_va: VirtAddr, end_va: VirtAddr) -> isize {
     let mut inner = TASK_MANAGER.inner.exclusive_access();
     let current = inner.current_task;
+    // 获取当前任务的可变 MemorySet。
     let memory_set = &mut inner.tasks[current].memory_set;
     
-    // 获取页范围
+    // 计算起始和结束虚拟页号 (start_vpn, end_vpn)。
     let start_vpn = start_va.floor();
     let end_vpn = end_va.ceil();
     
-    // 检查是否有匹配的区域
+    // 查找匹配区域: 遍历 MemorySet 中的 areas，查找是否存在一个 MapArea，其 vpn_range 的起始和结束页号 
+    // 完全等于 计算出的 start_vpn 和 end_vpn。注意： 这个实现要求 munmap 的范围必须与之前 mmap 的范围完全一致，否则会查找失败并返回 -1。
     let mut found_area = false;
     for (_, area) in memory_set.areas.iter().enumerate() {
         if area.vpn_range.get_start() == start_vpn && 
@@ -212,7 +218,7 @@ pub fn task_munmap(start_va: VirtAddr, end_va: VirtAddr) -> isize {
         return -1;
     }
     
-    // 找到完全匹配的区域，移除它
+    // 如果找到完全匹配的区域，调用 memory_set.remove_area_with_start_vpn(start_vpn) 来移除该区域。成功返回 0，否则返回 -1。
     let result = memory_set.remove_area_with_start_vpn(start_vpn);
     if result.is_some() {
         0
