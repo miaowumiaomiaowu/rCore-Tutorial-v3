@@ -111,9 +111,14 @@ pub fn sys_get_time(ts: *mut TimeVal, _tz: usize) -> isize {
     0
 }
 
-// 与fork+exec不同，spawn直接创建一个新的进程执行目标程序，而不复制当前进程的地址空间
+/// sys_spawn 的目标是创建一个全新的子进程，并让这个子进程直接开始执行指定的程序（由 path 参数指定）。这与传统的 fork + exec 不同：
+/// fork: 复制父进程的几乎所有状态（包括内存空间）。
+/// exec: 用新的程序镜像替换当前进程的内存空间和执行状态。
+/// spawn: 一步到位，创建一个新的、独立的进程，并加载指定程序，不复制父进程的内存空间。
 pub fn sys_spawn(path: *const u8) -> isize {
+    // 获取当前用户token
     let token = current_user_token();
+    //从用户传入的指针 path 获取程序路径字符串：
     let path = translated_str(token, path);
     if let Some(data) = get_app_data_by_name(path.as_str()) {
         // 直接创建一个新的任务控制块

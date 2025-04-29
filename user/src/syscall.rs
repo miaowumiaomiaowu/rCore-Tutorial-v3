@@ -167,6 +167,7 @@ pub fn sys_munmap(start: usize, len: usize) -> isize {
     syscall(SYSCALL_MUNMAP, [start, len, 0])
 }
 
+//添加用户态封装，方便用户程序调用
 pub fn sys_spawn(path: &str) -> isize {
     syscall(SYSCALL_SPAWN, [path.as_ptr() as usize, 0, 0])
 }
